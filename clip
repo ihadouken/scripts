@@ -1,0 +1,23 @@
+#!/bin/bash
+[[ -z $XDG_RUNTIME_DIR ]] && echo 'XDG_RUNTIME_DIR not set, exiting ...' && exit 1
+clip_file="$XDG_RUNTIME_DIR/clip"
+
+[[ ! -f "$clip_file" ]] && touch "$clip_file" && chmod 600 "$clip_file"
+
+while getopts lcs flag
+do
+    case $flag in 
+        l)  echo $(tac "$clip_file" | uniq | dmenu -i -fn Mononoki-nerd-font -l 10) | tr -d '\n' | xclip -sel c
+            exit 0 ;;
+        c)  cat /dev/null > "$clip_file"
+            exit 0 ;;
+        s)  sel="$(xsel)"
+            xsel -c ;;
+    esac
+done
+
+if [[ -n $sel ]]; then
+    echo $sel >> "$clip_file"
+else
+    xclip -o -sel c >> "$clip_file"
+fi

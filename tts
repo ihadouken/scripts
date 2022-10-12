@@ -1,0 +1,9 @@
+#!/bin/bash
+if nc -z -w1 8.8.8.8 443 &> /dev/null; then
+    gtts-cli --file /dev/stdin | mpv - &
+else
+    cat /dev/stdin | festival --tts --pipe &
+fi
+
+trap 'kill $!; exit 0' INT
+wait

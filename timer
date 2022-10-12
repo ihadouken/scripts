@@ -1,0 +1,14 @@
+#!/bin/bash
+    
+if [ $# -lt "1" ]; then 
+    time=${1:-"20m"}
+else
+    time="$1"
+fi
+
+countdown $time && \
+    (notify-send -t 30000 -u low -i "/usr/share/icons/Papirus/16x16/apps/xfce4-eyes.svg" "Don't Stress Your Eyes!" &&\
+        sleep 1 &&\
+        paplay '/usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga') &&\
+    zenity --info --text="BLINK !!"
+

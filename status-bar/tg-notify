@@ -1,0 +1,33 @@
+#!/bin/bash
+ulimit -m 307200 # physical memory (300 MB)
+ulimit -v 307200 # virtual memory
+ulimit -t 20     # processor time (in sec)
+
+check() {
+if ! nc -z 8.8.8.8 53 >/dev/null 2>&1; then
+    echo "No Internet !"
+    exit 0
+else
+    printf "\nRecent Messages.\n" > /home/hadouken/.cache/telegram-cli
+    num=$(echo | telegram-cli -N | head -n -2 | tail -n +10 | tee -a /home/hadouken/.cache/telgram-clr | wc -l) || exit 1
+    [[ $num -gt 0 ]] && paplay '/usr/share/sounds/freedesktop/stereo/message-new-instant.oga'
+    printf "%s Message(s)\n" "$num"
+    exit 0
+fi
+}
+
+show() {
+    tac ${XDG_CACHE_HOME:=$HOME/.cache}/telegram-cli | sed -n "1,/Recent Messages./p" | tac
+    echo "" | telegram-cli -W &> /dev/null
+    read -n 2
+    exit 0
+}
+
+while getopts "cs" arg
+do
+    case "$arg" in
+        c)  check ;;
+        s)  show ;;
+        *)  echo "Invalid option !!" && exit 1 ;;
+    esac
+done

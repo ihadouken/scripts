@@ -1,0 +1,23 @@
+#!/bin/bash
+#ftype=${1?Error: No file provided.}
+[[ -z $TMPDIR ]] && echo 'TMPDIR not set, exiting ...' && exit 1
+
+ftype=${1##*.}
+fname=$(basename -s ".c" "$1")
+
+cppr () {
+    g++ -Wall -o "$TMPDIR/$fname" $1 && "$TMPDIR/$fname" 
+    [[ -f "$TMPDIR/$fname" ]] && rm -f "$TMPDIR/$fname"
+}
+
+cr() {
+    gcc -Wall -Wextra -Werror -O2 -std=c99 -pedantic $1 -o "$TMPDIR/$fname" && "$TMPDIR/$fname" ${@:2}
+    [[ -f "$TMPDIR/$fname" ]] && rm -f "$TMPDIR/$fname"
+}
+
+case $ftype in
+    cpp)
+        cppr "$@" ;;
+    c)
+        cr "$@" ;;
+esac

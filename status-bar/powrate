@@ -1,0 +1,5 @@
+#!/bin/bash
+watts=$(upower -i /org/freedesktop/UPower/devices/battery_BAT0 | grep -o "[0-9].* W$")
+watts=${watts%% W}
+
+printf "%.0f\n" "$watts"

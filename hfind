@@ -1,0 +1,23 @@
+#!/bin/bash
+menu='fzf -i --tac'
+hst_bak_dir="$HOME/Backups/hbak"
+
+if [ "$#" -lt "1" ]; then
+    cmd=$(bat "$hst_bak_dir"/* "$HISTFILE" | $menu)
+elif [ "$1" = "latest" ]; then
+    cmd=$(cat "$HISTFILE" | tail | $menu)
+else
+    pattern="$1"
+
+    for i in ${@:2}
+    do
+        pattern+="\|$i"
+    done
+
+    cmd=$(grep -h --color=auto "$pattern" "$hst_bak_dir"/* "$HISTFILE" | $menu)
+fi
+if [[ -n "$cmd" ]]; then
+    printf "Exec: \033[95m '%s'\033[0m ? Y/[n] " "$cmd"
+    read -n 1 choice
+    [[ "$choice" == 'Y' ]] && echo && $(echo "$cmd")
+fi

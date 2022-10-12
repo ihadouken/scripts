@@ -1,0 +1,10 @@
+#!/bin/bash
+
+while getopts "msb" to_record
+do
+    case $to_record in
+        m) ffmpeg -f alsa -i default "$HOME/Recordings/ffmpeg/aud/$(date +%Y.%m.%d.%H-%M).mp3" 2>/dev/null ;;
+        s) ffmpeg -y -f x11grab -s 1366x768 -i :0 "$HOME/Recordings/ffmpeg/vid/$(date +%Y.%m.%d.%H-%M).mkv" 2>/dev/null ;;
+        b) ffmpeg -y -f x11grab -s 1366x768 -i :0 -f alsa -i default "$HOME/Recordings/ffmpeg/aud+vid/$(date +%Y.%m.%d.%H-%M).mkv" 2>/dev/null ;;
+    esac
+done

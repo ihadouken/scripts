@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+#
+# Script name: dm-colpick
+# Description: Copy a color to your clipboard using dmenu, change the colors if needed
+# Dependencies: dmenu, xclip
+# GitLab: https://www.gitlab.com/dwt1/dmscripts
+# License: https://www.gitlab.com/dwt1/dmscripts/LICENSE
+# Contributors: sloopy3333
+#               Simon Ingelsson
+#               HostGrady
+
+# Set with the flags "-e", "-o pipefail" cause the script to fail
+# if certain things happen, which is a good thing.  Otherwise, we can
+# get hidden bugs that are hard to discover.
+set -euo pipefail
+
+_path="$(cd "$(dirname "${BASH_SOURCE[0]}")" && cd "$(dirname "$(readlink "${BASH_SOURCE[0]}" || echo ".")")" && pwd)"
+if [[  -f "${_path}/_dm-helper.sh" ]]; then
+    # shellcheck disable=SC1090,SC1091
+    source "${_path}/_dm-helper.sh"
+else
+    # shellcheck disable=SC1090
+    echo "No helper-script found"
+fi
+
+# script will not hit this if there is no config-file to load
+# shellcheck disable=SC1090
+source "$(get_config)"
+
+
+main() {
+    # As this is loaded from other file it is technically not defined
+    # shellcheck disable=SC2154
+    _options=(
+    "Palette"
+    "Screen"
+    "List"
+    )
+
+    choice=$(printf "%s\n" "${_options[@]}" | ${DMENU} "Choose source: ") || exit 1
+    if [[ "$choice" == "Screen" ]]; then
+        colorpicker --short --one-shot --preview 2>/dev/null | tr -d '\n' | cp2cb
+
+    elif [[ "$choice"  == "Palette" ]]; then
+        yad --color --init-color=#000000 --geometry=450x450+0+0 | cp2cb
+
+    elif [[ "$choice" == "List" ]]; then
+        selected="$(printf '%s\n' "${!colpick_list[@]}" | ${DMENU} "color:" "$@")"
+        [ -z "${selected}" ] || "${colpick_list["${selected}"]}" | cp2cb
+    else
+        echo "Invalid selection."
+    fi
+}
+
+[[ "${BASH_SOURCE[0]}" == "${0}" ]] && main "$@"

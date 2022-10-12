@@ -1,0 +1,17 @@
+#!/bin/sh
+[[ -z $TMPDIR ]] && echo 'TMPDIR not set, exiting ...' && exit 1
+
+[[ -z $1 ]] && search=$(echo "" | dmenu -i -fn Mononoki-nerd-font -p 'Urban Dictionary:'|sed 's/ /%20/g') || search=$1
+
+[[ -z $search ]] && exit 1
+
+curl -s "https://api.urbandictionary.com/v0/define?term={$search}" | jq '.' | grep --color=always definition | awk 'BEGIN {RS="definition"; ORS=""} {print $0""++i}' > $TMPDIR/urban-dic
+
+n=$(wc -l < $TMPDIR/urban-dic)
+cat /dev/null > $TMPDIR/urban-dic.txt
+
+for i in $(eval echo {1..$n}p)
+do
+    sed -n $i $TMPDIR/urban-dic|sed -r "s/\x1B\[[0-9;]*[a-zA-Z]//g" >> $TMPDIR/urban-dic.txt
+done
+printf "\n\n\033[1;31m$(cat $TMPDIR/urban-dic.txt | dmenu -i -fn Mononoki-nerd-font -l $n -p "$1" | cut -d ':' -f 2 | grep -o "\".*\"")\033[0m\n"

@@ -1,0 +1,51 @@
+#!/bin/bash
+[[ -z $XDG_DATA_HOME ]] && echo 'XDG_DATA_HOME not set, exiting ...' && exit 1
+
+hst="$XDG_DATA_HOME/upload.sh/uploadhst"
+[[ "$1" == "-l" ]] && column -t "$hst" && exit 0
+
+prompt() {
+    [[ -n "$1" ]] && item="$(find "$1" -maxdepth 1 -exec basename {} \; | tail -n +2 | dmenu -i -fn Mononoki-nerd-font -l 20 -p 'Upload to 0x0.st: ')" || exit 1
+}
+
+up() {
+    [[ "$dir" == '.' ]]  && fpath="$item" || fpath="$dir/$item"
+    [[ -f "$fpath" ]] || exit 1
+
+    link="$(curl -s -F"file=@$fpath" https://0x0.st | xclip -f -sel c)"
+    if echo "$link" | grep -qE "^https://0x0\.st/[A-Za-z0-9]{4}\."; then
+        printf "[%s]:  %s --> %s\n" "$(date +'%d-%M-%Y-(%H:%M%p)')" "${fpath// /-}" "$link" >> "$hst"
+        printf "%s --> %s\n" "$fpath" "$link"
+        notify-send -u low -i '/usr/share/icons/Papirus/64x64/apps/mintupload.svg' "Uploaded $item" "$link"
+    else
+        printf "\033[1;31m[ERROR]: %s\033[0m\n" "Couldn't upload the file !"
+        notify-send -u low -i '/usr/share/icons/Papirus/48x48/emotes/face-sad.svg' "Couldn't upload the file !"
+    fi
+    exit 0
+}
+
+if [[ -f "$1" ]]; then
+    item="${1##*/}"
+    dir="${1%/*}"
+    [[ "$dir" == "$item" ]] && dir='.'
+    up
+elif [[ -d "$1" ]]; then
+    dir="$1"
+elif [[ $# -lt 1 ]]; then
+    item=$(pwd)
+else
+    printf "\033[1;31m[ERROR]: %s\033[0m\n" 'File not found !'
+fi
+
+while [[ -d "$dir/$item" ]]
+do
+    if [[ -n "$dir" ]]; then
+        [[ -n "$item" ]] && dir="$dir/$item" || dir="$dir"
+    else
+        dir="$item"
+    fi
+
+    prompt "$dir"
+done
+
+up

@@ -1,0 +1,27 @@
+#!/bin/bash
+cache_dir="$XDG_CACHE_HOME/memes"
+
+[[ $1 == "-c" ]] && rm -rf "$cache_dir"
+[[ -d "$cache_dir" ]] || mkdir -p "$cache_dir"
+
+declare -a options
+options=(
+    "Yes"
+    "No"
+)
+
+choice=$(printf "%s\n" "${options[@]}" | dmenu -i -l 2 -fn Mononoki-nerd-font -p "Download GIFs ?" ) || exit 1
+limit=$(echo | dmenu -fn Mononoki-nerd-font -p "Download limit :") || limit=30
+
+if [[ "$choice" == "Yes" ]]; then
+    wget -c -P "$cache_dir" $(curl -H "User-agent: 'my bot 0.1'" "https://www.reddit.com/r/memes.json?limit=$limit" | jq '.' | grep 'url_overridden' | grep -Eo "https://.*(jpg|png|gif)\b")
+
+elif [[ "$choice" == "No" ]]; then
+    wget -c -P "$cache_dir" $(curl -H "User-agent: 'my bot 0.1'" "https://www.reddit.com/r/memes.json?limit=$limit" | jq '.' | grep 'url_overridden' | grep -Eo "https://.*(jpg|png)\b")
+
+else
+    exit 1
+fi
+
+paplay '/usr/share/sounds/freedesktop/stereo/complete.oga'
+setsid -f sxiv -ta "$cache_dir"/* > /dev/null 2>&1

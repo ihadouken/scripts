@@ -1,0 +1,4 @@
+#!/bin/bash
+doas pacman -Syu
+echo -e '\033[1;33m*** PacSyu Finished :)\033[0m\n'
+read -s -n 1

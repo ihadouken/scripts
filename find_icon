@@ -1,0 +1,15 @@
+#!/bin/bash
+icon_dir="/usr/share/icons"
+if [[ $# -lt "1" ]]; then
+    find "$icon_dir" -type f | imv 2>/dev/null
+else
+    search=$(find "$icon_dir" -type f | grep "$1")
+    echo "Searching through icons for: $1"
+
+    if [[ -z $search ]]; then
+        echo "No results found for: $1"
+    else
+        printf "%s Results Found!\n" $(echo $search | wc -w)
+        imv $search 2> /dev/null
+    fi
+fi

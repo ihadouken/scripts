@@ -1,0 +1,11 @@
+#!/bin/bash
+for i in "$@"
+do
+    if [[ -f "$i" ]]; then
+        nohup xdg-open "$i" > ${XDG_CACHE_HOME:=$HOME/.cache}/open.$i.log 2>&1 &
+    elif [[ -d "$i" ]]; then
+        xdg-open "$i"
+    else
+        printf "\033[1;31m[ERROR]: %s\033[0m\n" 'File not found !'
+    fi
+done

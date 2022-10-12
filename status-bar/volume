@@ -1,0 +1,9 @@
+#!/bin/bash 
+#printf -v unmute_char ' \\U%x ' "61480"
+#printf -v mute_char ' \\U%x ' "61478"
+
+info="$(amixer get Master | tail -n1)"
+state=${info##*[}
+state=${state%]}
+
+[[ $state == "on" ]] && printf "%d%%" "$(echo $info | sed -r 's/.*\[(.*)%\].*/\1/')" || printf "M"
