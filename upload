@@ -13,7 +13,7 @@ up() {
     [[ -f "$fpath" ]] || exit 1
 
     link="$(curl -s -F"file=@$fpath" https://0x0.st | xclip -f -sel c)"
-    if echo "$link" | grep -qE "^https://0x0\.st/[A-Za-z0-9]{4}\."; then
+    if echo "$link" | grep -qE "^https://0x0\.st/"; then
         printf "[%s]:  %s --> %s\n" "$(date +'%d-%M-%Y-(%H:%M%p)')" "${fpath// /-}" "$link" >> "$hst"
         printf "%s --> %s\n" "$fpath" "$link"
         notify-send -u low -i '/usr/share/icons/Papirus/64x64/apps/mintupload.svg' "Uploaded $item" "$link"
