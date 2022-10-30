@@ -54,7 +54,7 @@ main() {
     *)
       pkill -f http || echo "mpv not running."
       start_radio "$choice" ;
-      mpv --no-video --input-ipc-server="$XDG_CACHE_HOME/dmsounds-ipc" "${radio_stations["${choice}"]}"
+      mpv --no-video --input-ipc-server="$XDG_CACHE_HOME/mpv-ipc-socket" "${radio_stations["${choice}"]}"
       return
       ;;
   esac

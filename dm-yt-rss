@@ -25,7 +25,7 @@ source "$(get_config)"
 
 main() {
   
-  cache_dir="${XDG_CONFIG_HOME:="$HOME/.config"}/dm-youtube"
+  cache_dir="${XDG_CACHE_HOME:="$HOME/.cache"}/dm-youtube"
   local _feed_url _channel _video
   local _channel_id _video_id _video_list
 
