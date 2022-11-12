@@ -22,7 +22,7 @@ main() {
   [ ! -d "${mus_dir}" ] && err "The Music folder could not be found, place your sounds in ${mus_dir}."
   # Produces a listing of the sound files.
   # shellcheck disable=SC2154
-  readarray -t _mus_list < <(find "${mus_dir}" \( -iname "*.mp3" -o -iname "*.m4a" -o -iname "*.ogg" \) -printf '%P\n')
+  readarray -t _mus_list < <(find "${mus_dir}" \( -iname "*.mp3" -o -iname "*.m4a" -o -iname "*.ogg" -o -iname "*.webm" \) -printf '%P\n')
  
   printf "%s\n" "${_mus_list[@]}"
 
