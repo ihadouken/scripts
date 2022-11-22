@@ -1,8 +1,10 @@
 #!/bin/bash
+log_dir=${XDG_CACHE_HOME:=$HOME/.cache}
 for i in "$@"
 do
     if [[ -f "$i" ]]; then
-        nohup xdg-open "$i" > ${XDG_CACHE_HOME:=$HOME/.cache}/open.$i.log 2>&1 &
+        nohup xdg-open "$i" > "$log_dir/open.$i.log" 2>&1 &
+    # for viewing directories in cli file manager
     elif [[ -d "$i" ]]; then
         xdg-open "$i"
     else
