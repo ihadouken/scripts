@@ -1,0 +1,14 @@
+#!/bin/bash
+icon_dir="/usr/share/icons"
+if [[ $# -lt "1" ]]; then
+    find "$icon_dir" -type f | imv 2>/dev/null
+else
+    results=$(find "$icon_dir" -type f -iname "*$1*")
+
+    if [[ -z $results ]]; then
+        echo "No results found for: $1"
+    else
+        printf "%s matches found.\n" $(echo $results | wc -w)
+        imv $results 2> /dev/null
+    fi
+fi
