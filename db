@@ -1,10 +1,10 @@
 #!/bin/bash
-[[ -z $TMPDIR ]] && echo 'TMPDIR not set, exiting ...' && exit 1
-
 if [[ -f "$1" ]]; then
-    exec_f=$(basename -s ".c" "$1")
-    gcc -w -g "${@:2}" -o "$TMPDIR/$exec_f" "$1" && gdb -q "$TMPDIR/$exec_f"
-    [[ -f "$TMPDIR/$exec_f" ]] && rm -f "$TMPDIR/$exec_f"
+    exec_f=$(basename -s '.c' "$1")
+    exec_d=${TMPDIR:-/tmp}
+
+    gcc -w -g "${@:2}" -o "$exec_d"/"$exec_f" "$1" && gdb -q "$exec_d"/"$exec_f"
+    [[ -f "$exec_d"/"$exec_f" ]] && rm -f "$exec_d"/"$exec_f"
 else
     echo "File doesn't exist!"
 fi

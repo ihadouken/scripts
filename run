@@ -1,6 +1,6 @@
 #!/bin/bash
 #ftype=${1?Error: No file provided.}
-[[ -z $TMPDIR ]] && echo 'TMPDIR not set, exiting ...' && exit 1
+[[ -z $TMPDIR ]] && TMPDIR='/tmp'
 
 ftype=${1##*.}
 fname=$(basename -s ".c" "$1")

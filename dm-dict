@@ -1,5 +1,5 @@
 #!/bin/sh
-[[ -z $TMPDIR ]] && echo 'TMPDIR not set, exiting ...' && exit 1
+[[ -z $TMPDIR ]] && TMPDIR='/tmp'
 
 [[ -z $1 ]] && search=$(echo "" | dmenu -i -fn Mononoki-nerd-font -p 'Urban Dictionary:'|sed 's/ /%20/g') || search=$1
 

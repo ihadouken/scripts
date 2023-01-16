@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
-[[ -z $XDG_CACHE_HOME ]] && echo 'XDG_CACHE_HOME not set, exiting ...' && exit 1
-
 DMENU="dmenu -i -l 20 -fn Mononoki-nerd-font -p" 
 
-cache_dir=$XDG_CACHE_HOME/dm-youtube
+cache_dir="${XDG_CACHE_HOME:-"$HOME/.cache"}"/dm-youtube
 [[ ! -d "$cache_dir" ]] && mkdir $cache_dir
 
 
@@ -11,7 +9,7 @@ get_query() {
     if [[ -z "$1" ]]; then
         query=$( echo | dmenu -fn Mononoki-nerd-font -p "Search YT Video:" )
     else
-	    query="$1"
+        query="$1"
     fi
 
     [[ -z "$query" ]] && printf "\033[1;31m[ERROR]: A query is required to proceed.\033[0m\n" && exit 1 
@@ -30,9 +28,9 @@ get_link() {
 
     link="https://$( curl -s "${urlstring}" \
     | jq -r '.items[] | "\(.snippet.channelTitle) => \(.snippet.title) => youtu.be/\(.id.videoId)"' \
-	| dmenu -fn Mononoki-nerd-font -i -p 'Select Video -' -l 20 \
+    | dmenu -fn Mononoki-nerd-font -i -p 'Select Video -' -l 20 \
     | tee -a "$cache_dir/play_hst"  \
-	| awk '{print $NF}' \
+    | awk '{print $NF}' \
     )"
 
     echo $link
@@ -45,7 +43,7 @@ if [[ -f "$cache_dir/search_hst" ]]; then
     uniq "$cache_dir/search_hst" | tac > "$cache_dir/search_hst_buf"
     readarray -t search_hst_list < "$cache_dir/search_hst_buf"
     printf "%s\n" "${search_hst_list[@]}"
-	echo
+    echo
 else
     touch "$cache_dir/search_hst"
 fi
@@ -56,7 +54,7 @@ if [[ -f "$cache_dir/play_hst" ]]; then
     uniq "$cache_dir/play_hst" | tac > "$cache_dir/play_hst_buf"
     readarray -t play_hst_list < "$cache_dir/play_hst_buf"
     printf "%s\n" "${play_hst_list[@]}"
-	echo
+    echo
 else
     touch "$cache_dir/play_hst"
 fi
@@ -85,7 +83,7 @@ elif [[ "$choice" == "Recent Plays" ]]; then
     getVid=$(printf '%s\n' "${play_hst_list[@]}" | ${DMENU} 'Previously Played:' "$@")
     link="https://$(echo $getVid | awk '{print $NF}')"
     echo $link
-    
+
     setsid -f mpv --profile=hadouken "$link" > /dev/null 2>&1 || echo "Couldn't launch player" && exit 1
 
 
@@ -93,7 +91,7 @@ elif [[ "$choice" == "Search History" ]]; then
     query=$(printf '%s\n' "${search_hst_list[@]}" | ${DMENU} 'Recently Searched:' "$@")
     [[ -z "$query" ]] && printf "\033[1;31m[ERROR]: A query is required to proceed.\033[0m\n" && exit 1 
     query="${query// /+}"
-    
+
     get_link
     setsid -f mpv --profile=hadouken "$link" > /dev/null 2>&1 || echo "Couldn't launch player" && exit 1
 

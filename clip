@@ -1,6 +1,5 @@
 #!/bin/bash
-[[ -z $XDG_RUNTIME_DIR ]] && echo 'XDG_RUNTIME_DIR not set, exiting ...' && exit 1
-clip_file="$XDG_RUNTIME_DIR/clip"
+clip_file="${TMPDIR:-"/tmp"}/clip"
 
 [[ ! -f "$clip_file" ]] && touch "$clip_file" && chmod 600 "$clip_file"
 
