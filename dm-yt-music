@@ -12,10 +12,7 @@ else
     echo "No helper-script found"
 fi
 
-# check for necessary environmental variables
-[[ -z $XDG_CACHE_HOME ]] && echo 'XDG_CACHE_HOME not set, exiting ...' && exit 1
-
-# script will not hit this if there is no config-file to load
+# Script will not hit this if there is no config-file to load
 # shellcheck disable=SC1090
 source "$(get_config)"
 
@@ -27,6 +24,7 @@ get_query() {
     query="${query// /+}"
 }
 
+# TODO: Return now_playing as a string instead of storing in file
 get_link() {
     # Add Youtube API key.
     YT_API_KEY="$( cat "$XDG_CONFIG_HOME"/api_keys/youtube)"
@@ -34,29 +32,33 @@ get_link() {
 
     # Get desired video link.
     link="https://$( curl -s "${urlstring}" \
-	| jq -r '.items[] | "\(.snippet.channelTitle) => \(.snippet.title) => youtu.be/\(.id.videoId)"' \
-	| dmenu -fn Mononoki-nerd-font -i -p 'Select M/V -' -l 20 \
+    | jq -r '.items[] | "\(.snippet.channelTitle) => \(.snippet.title) => youtu.be/\(.id.videoId)"' \
+    | dmenu -fn Mononoki-nerd-font -i -p 'Select M/V -' -l 20 \
     | tee "$cache_dir/now_playing"  \
     | tee -a "$cache_dir/play_hst"  \
-	| awk '{print $NF}' \
+    | awk '{print $NF}' \
     )"
 }
 
-main() {
+setup() {
     down_dir=~/Music/youtube
     [[ -d "$down_dir" ]] || mkdir -p $down_dir
 
-    cache_dir=$XDG_CACHE_HOME/dm-yt-music
-    [[ -d "$cache_dir" ]] || mkdir -p $cache_dir 
-        
+    cache_dir=${XDG_CACHE_HOME:-$HOME/.cache}/dm-yt-music
+    [[ -d "$cache_dir" ]] || mkdir -p $cache_dir
 
+    socket="${XDG_CACHE_HOME:-$HOME/.cache}/mpv-ipc-socket"
+    player="mpv --no-video --input-ipc-server="$socket""
+
+
+    # TODO: Try sqlite instead of files
     # Populate arrays from history files
     if [[ -f "$cache_dir/search_hst" ]]; then
         sed -i 's/^$//' "$cache_dir/search_hst"
         uniq "$cache_dir/search_hst" | tac > "$cache_dir/search_hst_buf"
         readarray -t search_hst_list < "$cache_dir/search_hst_buf"
         printf "%s\n" "${search_hst_list[@]}"
-	    echo
+        echo
     else
         touch "$cache_dir/search_hst"
     fi
@@ -67,7 +69,7 @@ main() {
         uniq "$cache_dir/play_hst" | tac > "$cache_dir/play_hst_buf"
         readarray -t play_hst_list < "$cache_dir/play_hst_buf"
         printf "%s\n" "${play_hst_list[@]}"
-	    echo
+        echo
     else
         touch "$cache_dir/play_hst"
     fi
@@ -76,8 +78,14 @@ main() {
     if [[ ! -f "$cache_dir/now_playing" ]]; then
         touch "$cache_dir/now_playing"
     fi
+}
 
-    socket="$XDG_CACHE_HOME/mpv-ipc-socket"
+kill_player() {
+    echo 'quit' | socat - "$socket" &> /dev/null || echo "No player instance found."
+}
+
+main() {
+    setup
 
     # An array of options to choose.
     local _options=(
@@ -88,68 +96,67 @@ main() {
     "Download Music"
     "Play/Pause Player"
     "Kill Player"
-    #"Quit"
     )
 
 
     # Piping the _options array into dmenu.
     # We use "printf '%s\n'" to format the array one item to a line.
-    choice=$(printf '%s\n' "${_options[@]}" | ${DMENU} 'YT Music' "${@}")
+    choice=$(printf '%s\n' "${_options[@]}" | ${DMENU} 'YT Music' "${@}") || exit 1
 
     if [ "$choice" == "Find M/V" ]; then
         get_query
-        echo 'quit' | socat - $socket || printf "mpv was not running.\n"
-	
+        kill_player
+
         get_link
         printf "$link\n"
 
-    # Call mpv without video.
-        setsid -f mpv --no-video --input-ipc-server="$socket" "$link" > $cache_dir/player.log 2>&1 && notify-send -u low -i /usr/share/icons/Papirus/32x32/apps/org.gnome.Music.svg "Now Playing ..." "$(awk 'NF{NF-=2};1' $cache_dir/now_playing)" && exit 0 # || echo "Couldn't launch player" && exit 1
+        # Call mpv without video.
+        notify-send -i /usr/share/icons/Papirus/32x32/apps/org.gnome.Music.svg "Now Playing ..." "$(awk 'NF{NF-=2};1' $cache_dir/now_playing)"
+        $player "$link" && exit 0
 
 
     elif [ "$choice" == "Search History" ]; then
         query=$(printf '%s\n' "${search_hst_list[@]}" | ${DMENU} 'Recently Searched:' "$@")
         query="${query// /+}"
 
-        echo 'quit' | socat - $socket || printf "mpv was not running.\n"
-
+        kill_player
         get_link
         printf "$link\n"
 
-    # Play the chosen Song.
-    #shellcheck disable=SC2154
-        setsid -f mpv --no-video --input-ipc-server="$socket" "$link" > $cache_dir/player.log 2>&1 && notify-send -u low -i /usr/share/icons/Papirus/32x32/apps/org.gnome.Music.svg "Now Playing ..." "$(awk 'NF{NF-=2};1' $cache_dir/now_playing)" && exit 0 # || echo "Couldn't launch player" && exit 1
+        # Play the chosen Song.
+        #shellcheck disable=SC2154
+        notify-send -i /usr/share/icons/Papirus/32x32/apps/org.gnome.Music.svg "Now Playing ..." "$(awk 'NF{NF-=2};1' $cache_dir/now_playing)"
+        $player "$link" && exit 0
 
 
     elif [ "$choice" == "Random Song" ]; then
         getRand=$(printf '%s\n' "${play_hst_list[@]}" | shuf -n 1)
         link="https://$(echo $getRand | awk '{print $NF}')"
-        echo 'quit' | socat - "$socket" || printf "mpv was not running.\n"
+        kill_player
 
-    # Play random song file.
-        setsid -f mpv --no-video --input-ipc-server="$socket" "$link" > $cache_dir/player.log 2>&1 && notify-send -u low -i /usr/share/icons/Papirus/32x32/apps/org.gnome.Music.svg "Now Playing ..." "$(echo $getRand | awk 'NF{NF-=2};1')" && exit 0  # || echo "Couldn't launch player" && exit 1
-
-    # ffplay -nodisp -loop 0 "$sounds_dir/$getRand" &
+        # Play random song file.
+        notify-send -i /usr/share/icons/Papirus/32x32/apps/org.gnome.Music.svg "Now Playing ..." "$(echo $getRand | awk 'NF{NF-=2};1')"
+        $player "$link" && exit 0
 
 
     elif [ "$choice" == "Recent Plays" ]; then
         getSong=$(printf '%s\n' "${play_hst_list[@]}" | ${DMENU} 'Previously Played:' "$@")
         link="https://$(echo $getSong | awk '{print $NF}')"
-        echo 'quit' | socat - "$socket" || printf "mpv was not running.\n"
+        kill_player
 
-        setsid -f mpv --no-video --input-ipc-server="$socket" "$link" > $cache_dir/player.log 2>&1 && notify-send -u low -i /usr/share/icons/Papirus/32x32/apps/org.gnome.Music.svg "Now Playing ..." "$(echo $getSong | awk 'NF{NF-=2};1')" && exit 0 # || echo "Couldn't launch player" && exit 1
-
-    # ffplay -nodisp -loop 0 "$sounds_dir/$getRand" &
+        notify-send -i /usr/share/icons/Papirus/32x32/apps/org.gnome.Music.svg "Now Playing ..." "$(echo $getSong | awk 'NF{NF-=2};1')"
+        $player "$link" && exit 0
 
 
     elif [ "$choice" == "Download Music" ]; then
         get_query
         get_link
 
-        setsid -f yt-dlp -f 'ba' --audio-format mp3 $link -o $down_dir/"$(awk 'NF{NF-=2};1' $cache_dir/now_playing | cut --complement -d' ' -f 1-2 | sed "s/^=> //").mp3" >> $cache_dir/download.log 2>&1 && notify-send -u low -i "/usr/share/icons/Papirus/16x16/apps/youtube-dl.svg" "Downloading ..." "$(awk 'NF{NF-=2};1' $cache_dir/now_playing)" && exit 0 # || echo "Couldn't start downloading" && exit 1
+        notify-send -i "/usr/share/icons/Papirus/16x16/apps/youtube-dl.svg" "Downloading ..." "$(awk 'NF{NF-=2};1' $cache_dir/now_playing)"
+        yt-dlp -f 'ba' --audio-format mp3 $link -o $down_dir/"$(awk 'NF{NF-=2};1' $cache_dir/now_playing | cut --complement -d' ' -f 1-2 | sed "s/^=> //").mp3" && exit 0
 
     elif [ "$choice" == "Kill Player" ]; then
-        echo 'quit' | socat - "$socket" && exit 0 || echo "mpv was not running."
+        kill_player
 
     elif [ "$choice" == "Play/Pause Player" ]; then
         echo "cycle pause" | socat - "$socket"
