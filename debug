@@ -1,10 +1,25 @@
 #!/bin/bash
-if [[ -f "$1" ]]; then
-    exec_f=$(basename -s '.c' "$1")
-    exec_d=${TMPDIR:-/tmp}
+[[ -z "$1" ]] && echo "File doesn't exist!" && exit 1
 
-    gcc -w -g "${@:2}" -o "$exec_d"/"$exec_f" "$1" && gdb -q "$exec_d"/"$exec_f"
-    [[ -f "$exec_d"/"$exec_f" ]] && rm -f "$exec_d"/"$exec_f"
-else
-    echo "File doesn't exist!"
-fi
+ftype=${1##*.}
+exec_d=${TMPDIR:-/tmp}
+
+cr() {
+    exec_f="$(basename -s '.c' "$1")"
+    gcc -W -g -o "$exec_d"/"$exec_f" "$1" && gdb -q "$exec_d"/"$exec_f"
+}
+
+cppr() {
+    exec_f="$(basename -s '.cpp' "$1")"
+    g++ -W -g -o "$exec_d"/"$exec_f" "$1" && gdb -q "$exec_d"/"$exec_f"
+}
+
+case $ftype in
+    cpp)
+        cppr "$@" ;;
+    c)
+        cr "$@" ;;
+esac
+
+# Cleanup
+[[ -f "$exec_d"/"$exec_f" ]] && rm -f "$exec_d"/"$exec_f"
