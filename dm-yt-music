@@ -9,7 +9,7 @@ if [[ -f "${_path}/_dm-helper.sh" ]]; then
     source "${_path}/_dm-helper.sh"
 else
 # shellcheck disable=SC1090
-    echo "No helper-script found"
+    echo 'No helper-script found'
 fi
 
 # Script will not hit this if there is no config-file to load
@@ -33,7 +33,7 @@ get_link() {
     # Get desired video link.
     link="https://$( curl -s "${urlstring}" \
     | jq -r '.items[] | "\(.snippet.channelTitle) => \(.snippet.title) => youtu.be/\(.id.videoId)"' \
-    | dmenu -fn Mononoki-nerd-font -i -p 'Select M/V -' -l 20 \
+    | ${DMENU} 'Select M/V -' \
     | tee "$cache_dir/now_playing"  \
     | tee -a "$cache_dir/play_hst"  \
     | awk '{print $NF}' \
@@ -41,7 +41,7 @@ get_link() {
 }
 
 setup() {
-    down_dir=~/Music/youtube
+    down_dir="$HOME/Music/youtube"
     [[ -d "$down_dir" ]] || mkdir -p $down_dir
 
     cache_dir=${XDG_CACHE_HOME:-$HOME/.cache}/dm-yt-music
@@ -81,7 +81,7 @@ setup() {
 }
 
 kill_player() {
-    echo 'quit' | socat - "$socket" &> /dev/null || echo "No player instance found."
+    echo 'quit' | socat - "$socket" &> /dev/null || echo 'No player instance found.'
 }
 
 main() {
@@ -89,13 +89,13 @@ main() {
 
     # An array of options to choose.
     local _options=(
-    "Find M/V"
-    "Recent Plays"
-    "Search History"
-    "Random Song" 
-    "Download Music"
-    "Play/Pause Player"
-    "Kill Player"
+    'Find M/V'
+    'Recent Plays'
+    'Search History'
+    'Random Song'
+    'Download Music'
+    'Play/Pause Player'
+    'Kill Player'
     )
 
 
@@ -103,7 +103,7 @@ main() {
     # We use "printf '%s\n'" to format the array one item to a line.
     choice=$(printf '%s\n' "${_options[@]}" | ${DMENU} 'YT Music' "${@}") || exit 1
 
-    if [ "$choice" == "Find M/V" ]; then
+    if [ "$choice" == 'Find M/V' ]; then
         get_query
         kill_player
 
@@ -111,11 +111,11 @@ main() {
         printf "$link\n"
 
         # Call mpv without video.
-        notify-send -i /usr/share/icons/Papirus/32x32/apps/org.gnome.Music.svg "Now Playing ..." "$(awk 'NF{NF-=2};1' $cache_dir/now_playing)"
+        notify-send -i /usr/share/icons/Papirus/32x32/apps/org.gnome.Music.svg 'Now Playing ...' "$(awk 'NF{NF-=2};1' $cache_dir/now_playing)"
         $player "$link" && exit 0
 
 
-    elif [ "$choice" == "Search History" ]; then
+    elif [ "$choice" == 'Search History' ]; then
         query=$(printf '%s\n' "${search_hst_list[@]}" | ${DMENU} 'Recently Searched:' "$@")
         query="${query// /+}"
 
@@ -125,44 +125,44 @@ main() {
 
         # Play the chosen Song.
         #shellcheck disable=SC2154
-        notify-send -i /usr/share/icons/Papirus/32x32/apps/org.gnome.Music.svg "Now Playing ..." "$(awk 'NF{NF-=2};1' $cache_dir/now_playing)"
+        notify-send -i /usr/share/icons/Papirus/32x32/apps/org.gnome.Music.svg 'Now Playing ...' "$(awk 'NF{NF-=2};1' $cache_dir/now_playing)"
         $player "$link" && exit 0
 
 
-    elif [ "$choice" == "Random Song" ]; then
+    elif [ "$choice" == 'Random Song' ]; then
         getRand=$(printf '%s\n' "${play_hst_list[@]}" | shuf -n 1)
         link="https://$(echo $getRand | awk '{print $NF}')"
         kill_player
 
         # Play random song file.
-        notify-send -i /usr/share/icons/Papirus/32x32/apps/org.gnome.Music.svg "Now Playing ..." "$(echo $getRand | awk 'NF{NF-=2};1')"
+        notify-send -i /usr/share/icons/Papirus/32x32/apps/org.gnome.Music.svg 'Now Playing ...' "$(echo $getRand | awk 'NF{NF-=2};1')"
         $player "$link" && exit 0
 
 
-    elif [ "$choice" == "Recent Plays" ]; then
+    elif [ "$choice" == 'Recent Plays' ]; then
         getSong=$(printf '%s\n' "${play_hst_list[@]}" | ${DMENU} 'Previously Played:' "$@")
         link="https://$(echo $getSong | awk '{print $NF}')"
         kill_player
 
-        notify-send -i /usr/share/icons/Papirus/32x32/apps/org.gnome.Music.svg "Now Playing ..." "$(echo $getSong | awk 'NF{NF-=2};1')"
+        notify-send -i /usr/share/icons/Papirus/32x32/apps/org.gnome.Music.svg 'Now Playing ...' "$(echo $getSong | awk 'NF{NF-=2};1')"
         $player "$link" && exit 0
 
 
-    elif [ "$choice" == "Download Music" ]; then
+    elif [ "$choice" == 'Download Music' ]; then
         get_query
         get_link
 
-        notify-send -i "/usr/share/icons/Papirus/16x16/apps/youtube-dl.svg" "Downloading ..." "$(awk 'NF{NF-=2};1' $cache_dir/now_playing)"
+        notify-send -i '/usr/share/icons/Papirus/16x16/apps/youtube-dl.svg' 'Downloading ...' "$(awk 'NF{NF-=2};1' $cache_dir/now_playing)"
         yt-dlp -f 'ba' --audio-format mp3 $link -o $down_dir/"$(awk 'NF{NF-=2};1' $cache_dir/now_playing | cut --complement -d' ' -f 1-2 | sed "s/^=> //").mp3" && exit 0
 
-    elif [ "$choice" == "Kill Player" ]; then
+    elif [ "$choice" == 'Kill Player' ]; then
         kill_player
 
-    elif [ "$choice" == "Play/Pause Player" ]; then
-        echo "cycle pause" | socat - "$socket"
+    elif [ "$choice" == 'Play/Pause Player' ]; then
+        echo 'cycle pause' | socat - "$socket"
 
     else
-        echo "Program terminated." && exit 0
+        echo 'Program terminated.' && exit 0
     fi
     }
 

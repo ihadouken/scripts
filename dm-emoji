@@ -1,28 +1,30 @@
-#!/bin/sh
-
+#!/usr/bin/env bash
 # The famous "get a menu of emojis to copy" script.
 
-emoji_file="$XDG_DATA_HOME/dm-emoji/emoji_list"
+set -euo pipefail
+_path="$(cd "$(dirname "${BASH_SOURCE[0]}")" && cd "$(dirname "$(readlink "${BASH_SOURCE[0]}" || echo ".")")" && pwd)"
 
-# Get user selection via dmenu from emoji file.
-chosen="$(cut -d ';' -f1 "$emoji_file" | dmenu -i -l 20 -fn Mononoki-14 | sed "s/ .*//")"
-
-# Exit if none chosen.
-[ -z "$chosen" ] && exit
-
-
-paste () {
-    if [[ "$(xdotool getwindowfocus getwindowname)" == "hadouken@archrs:~" ]] ; then
-        xdotool key "ctrl+shift+v"
-    else
-        xdotool key "ctrl+v"
-    fi
-}
-# If you run this command with an argument, it will automatically insert the
-# character. Otherwise, show a message that the emoji has been copied.
-if [ -n "$1" ]; then
-	xdotool type "$chosen" 
+if [[ -f "${_path}/_dm-helper.sh" ]]; then
+# shellcheck disable=SC1090,SC1091
+    source "${_path}/_dm-helper.sh"
 else
-	printf "%s" "$chosen" | xclip -selection clipboard && paste
-	notify-send -u low "'$chosen' copied to clipboard." 
+# shellcheck disable=SC1090
+    echo 'No helper-script found'
 fi
+
+# Script will not hit this if there is no config-file to load
+# shellcheck disable=SC1090
+source "$(get_config)"
+
+main() {
+    emoji_file="$XDG_DATA_HOME/dm-emoji/emoji_list"
+
+    # Get user selection via dmenu from emoji file.
+    chosen="$(cut -d ';' -f1 "$emoji_file" | ${DMENU} 'Select emoji: ' | sed 's/ .*//')" || exit 1
+
+    xdotool type "$chosen"
+    printf "%s" "$chosen" | xclip -selection clipboard
+    notify-send -u low "'$chosen' copied to clipboard." 
+}
+
+[[ "${BASH_SOURCE[0]}" == "${0}" ]] && main "$@"
