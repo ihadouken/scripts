@@ -19,6 +19,8 @@ case $ftype in
         cppr "$@" ;;
     c)
         cr "$@" ;;
+    *)
+        echo 'Unknown file format.' ;;
 esac
 
 # Cleanup
