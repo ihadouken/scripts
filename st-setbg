@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+wal="$1"
+res="$(xrandr | grep -o 'current [0-9]* x [0-9]*,' | grep -o '[0-9]* x [0-9]*' | tr -d ' ')"
+bg="${XDG_CACHE_HOME:-$HOME/.cache}"/st/bg.ff
+
+convert "$wal" -resize "$res" "/tmp/st-bg.ff"
+ff-border e 50 < "/tmp/st-bg.ff" | ff-bright rgba 0 0.5 1 | ff-blur 50 15 > "$bg"
