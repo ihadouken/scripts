@@ -20,6 +20,10 @@ case $ftype in
         cppr "$@" ;;
     c)
         cr "$@" ;;
+    java)
+        java "$@" ;;
+    py)
+        python "$@" ;;
     *)
         echo 'Unknown file format.' ;;
 esac
