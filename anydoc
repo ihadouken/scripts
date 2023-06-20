@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+showhelp() {
+    cat <<- EOM
+	Convert office document formats like PPTX, DOCX, XLSX into one another.
+	Usage: $(basename "$0") -i /path/to/file [-o output_file]
+
+	-i -> specify the path to the file to convert
+	-o -> specify filename for saving the converted output (optional)
+
+	Input file extension specifies the output document format.
+	Default output file has same name (in PDF format) as input file.
+	EOM
+}
+
+while getopts 'hsi:o:' arg; do case "$arg" in
+    o) outfile="$OPTARG" ;;
+    i) infile="$OPTARG" ;;
+    h) showhelp && exit 0 ;;
+    ?) showhelp && exit 1 ;;
+esac done
+
+[[ -z "$infile" ]] && showhelp && exit 1
+[[ -z "$outfile" ]] && outfile="$(basename "${infile%.*}").pdf"
+
+api_key="$(cat "${XDG_CONFIG_HOME:-$HOME/.config}"/api_keys/pspdfkit)"
+curl -X POST https://api.pspdfkit.com/build \
+    -H "Authorization: Bearer $api_key" \
+    -o "$outfile" \
+    --fail \
+    -s \
+    -F document="@$infile" \
+    -F instructions='{
+        "parts": [
+            {
+              "file": "document"
+            }
+        ]
+    }'
