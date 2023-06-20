@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+data_dir="${XDG_DATA_HOME:-$HOME/.local/share}/wal"
+cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/wal"
+
+showhelp() {
+	cat <<- EOM
+	Set wallpaper and apply colorscheme extracted from it (using pywal) to other programs.
+	Usage: $(basename $0) [-fh]
+	       $(basename $0) [image_dir/image]
+
+	If no wallpaper provided, choose one randomly from favorities file. If a
+	directory of images is provided, keep choosing randomly from it until one
+	wallpaper is selected by user.
+	Favorites file -> $data_dir/favorites.txt
+
+	-f -> save the current wallpaper to favorites
+	-h -> show this help message
+	EOM
+}
+
+while getopts "hf" opt; do case "$opt" in
+    f) cat "$cache_dir"/wal | sed -e 's/$/\n/' >> "$data_dir"/favorites.txt
+       cat "$data_dir"/favorites.txt | sort | uniq > "${TMPDIR:-/tmp}"/wal-fav
+       cp /tmp/wal-fav "$data_dir"/favorites.txt
+       exit 0
+       ;;
+    h) showhelp && exit 0 ;;
+    ?) showhelp && exit 1 ;;
+esac done
+
+[[ -n "$1" ]] && wal="$1" || wal="$(shuf "$data_dir/favorites.txt" -n 1)"
+wal_cmd="wal -i '$wal' --cols16 --backend colorz"
+
+if [[ -d "$wal" ]]; then
+    # iterate as long as condition is false
+    until [[ "$choice" == 'y' ]]; do
+        eval "$wal_cmd"
+        read -r -n 1 -p 'Like this colorscheme ? (y/n)' choice
+        printf "\n\n"
+    done
+elif [[ -f "$wal" ]]; then
+    eval "$wal_cmd"
+else
+    echo "[Error]: '$wal' is not a file or directory."
+fi
+
+### Program Integration ###
+# firefox
+# semicolon is required after the last command in a command group
+pgrep -x firefox > /dev/null && { pywalfox update || echo "Can't update firefox theme !"; }
+
+# dunst
+pgrep -x dunst > /dev/null && killall dunst
+
+# StartTree
+python "starttree.py" &> /dev/null
