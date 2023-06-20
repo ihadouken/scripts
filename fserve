@@ -1,11 +1,11 @@
 #!/bin/bash
 #BASH script to serve files
 #Usage: serve <filename>
-#if root then port 80 is used, else port 660
+#for root then port 80 is used, else port 8888
 
 file="$1"
 #TODO: split fileNAME from file
-port="8000"
+port="8888"
 addr="$(ip route get 1.2.3.4 | cut -d' ' -f 7)"
 
 #TODO: Add dynamic ports
@@ -39,7 +39,7 @@ shout(){
 while true
 do
     trap 'break' SIGINT
-    printf "\033[1;32mServing $file ($size bytes) with ❤️ on http://$addr:$port\033[0m\n"
+    printf "\033[1;32mServing $file ($size bytes) with ❤️  on http://$addr:$port\033[0m\n"
     shout | nc -l -p $port
 done
 
