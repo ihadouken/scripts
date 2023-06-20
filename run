@@ -1,15 +1,22 @@
 #!/bin/bash
-#ftype=${1?Error: No file provided.}
+die() {
+    echo "${1:-Some Error Occured.}"
+    exit 1
+}
+
+[[ -z "$1" ]] && die 'No File Provided.'
+[[ -f "$1" ]] || die "File Doesn't Exist."
+
 [[ -z $TMPDIR ]] && TMPDIR='/tmp'
 ftype=${1##*.}
 
-cppr () {
+cpprun() {
     fname=$(basename -s ".cpp" "$1")
     g++ -Wall -Wextra -Werror -O2 -pedantic -o "$TMPDIR/$fname" $1 && "$TMPDIR/$fname"
     [[ -f "$TMPDIR/$fname" ]] && rm -f "$TMPDIR/$fname"
 }
 
-cr() {
+crun() {
     fname=$(basename -s ".c" "$1")
     gcc -Wall -Wextra -Werror -O2 -std=c99 -pedantic $1 -o "$TMPDIR/$fname" && "$TMPDIR/$fname" ${@:2}
     [[ -f "$TMPDIR/$fname" ]] && rm -f "$TMPDIR/$fname"
@@ -17,13 +24,13 @@ cr() {
 
 case $ftype in
     cpp)
-        cppr "$@" ;;
+        cpprun "$@" ;;
     c)
-        cr "$@" ;;
+        crun "$@" ;;
     java)
         java "$@" ;;
     py)
         python "$@" ;;
     *)
-        echo 'Unknown file format.' ;;
+        die 'Unknown file format.' ;;
 esac
