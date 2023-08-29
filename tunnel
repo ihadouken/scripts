@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# Set essential defaults.
+port=4321
+program="$SHELL"
+
+showhelp() {
+    cat <<- EOM
+	Run a program (or shell) with networking proxied through ssh tunnel.
+	Usage: "$(basename "$0")" [options] -r remote
+
+	-h -> show this help message
+	-r -> ssh remote to tunnel traffic through (user@machine). Aliases in ssh config are supported.
+	-e -> program (or shell) to execute with networking through ssh tunnel. Default: $SHELL
+	-p -> port on which the ssh tunnel listens
+
+	Dependencies:
+	- ssh: setup of dynamic SOCKS5 proxy
+	- socksify: emulate HTTP proxy on top of the SOCKS proxy as all applications don't support SOCKS.
+
+	EOM
+}
+
+while getopts 'e:hp:r:' 'opt'; do case $opt in
+    'e')
+        program="$OPTARG"
+    ;;
+    'p')
+        port="$OPTARG"
+    ;;
+    'r')
+        remote="$OPTARG"
+    ;;
+    'h')
+        showhelp && exit 0
+    ;;
+    '?')
+        showhelp && exit 1
+    ;;
+esac done
+
+die() {
+    [[ -n "$1" ]] && msg="$1" || msg='Some error occured.'
+    echo "$msg"
+    exit 1
+}
+
+cleanup() {
+    # Release port used by SOCKS proxy
+    kill -9 $(lsof -t -i :$port)
+}
+
+# Complain if no remote was provided.
+[[ -z "$remote" ]] && showhelp && die 'Missing remote.'
+
+# Create dynamic port forward using ssh tunnel.
+ssh -fND $port "$remote" || die "Couldn't create ssh tunnel."
+
+# Do cleanup before script ends.
+trap 'cleanup' EXIT
+
+# Run program via SOCKS5 proxy.
+export SOCKS_SERVER="127.0.0.1:$port"
+export SOCKS_REMOTE="$remote"
+socksify "$program" || die "Couldn't socksify "
