@@ -18,17 +18,22 @@ showhelp() {
 	EOM
 }
 
-while getopts "hf" opt; do case "$opt" in
-    f) cat "$cache_dir"/wal | sed -e 's/$/\n/' >> "$data_dir"/favorites.txt
-       cat "$data_dir"/favorites.txt | sort | uniq > "${TMPDIR:-/tmp}"/wal-fav
+while getopts "hfr" opt; do case "$opt" in
+    f) sed -e 's/$/\n/' "$cache_dir"/wal >> "$data_dir"/favorites.txt
+       sort "$data_dir"/favorites.txt | uniq > "${TMPDIR:-/tmp}"/wal-fav
        cp /tmp/wal-fav "$data_dir"/favorites.txt
        exit 0
        ;;
+    r) wal="$(sed -e 's/$/\n/' "$cache_dir"/wal)" ;;
     h) showhelp && exit 0 ;;
     ?) showhelp && exit 1 ;;
 esac done
 
-[[ -n "$1" ]] && wal="$1" || wal="$(shuf "$data_dir/favorites.txt" -n 1)"
+# [[ -n "$1" ]] && wal="$1" || wal="$(shuf "$data_dir/favorites.txt" -n 1)"
+if [[ -z "$wal" ]]; then
+    [[ -n "$1" ]] && wal="$1" || wal="$(fzf < "$data_dir/favorites.txt")"
+fi
+
 wal_cmd="wal -i '$wal' --cols16 --backend colorz"
 
 if [[ -d "$wal" ]]; then
@@ -53,4 +58,4 @@ pgrep -x firefox > /dev/null && { pywalfox update || echo "Can't update firefox 
 pgrep -x dunst > /dev/null && killall dunst
 
 # StartTree
-python "starttree.py" &> /dev/null
+starttree.py &> /dev/null
