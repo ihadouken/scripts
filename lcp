@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+# Extensions for leetcode-cli -> https://github.com/clearloop/leetcode-cli
+
+rootdir="$XDG_DATA_HOME/leetcode"
+
+die() {
+    [[ -n "$1" ]] && msg="$1" || msg='Some error occured.'
+    echo "$msg"
+    exit 1
+}
+
+showhelp() {
+    cat <<- EOM
+	leetcode plus - extend the utility of leetcode-cli.
+	Usage: lcp subcommand [arguments]
+
+	done -> List all problems accepted by leetcode.
+	find -> Find the id of a problem by searching its name.
+	        Requires env variable "MENU" to be set.
+	todo -> List problems picked but not accepted.
+	switch -> Switch from current account to one provided as argument.
+	          Each account's data must be in <rootdir>/<username>.
+	          leetcode-cli expects account data at ~/.leetcode. So,
+	          switching is done by via symlinks.
+	whoami -> Show which account is being used.
+	accounts -> List all accounts that can be used.
+	help -> Show this help message.
+	EOM
+}
+
+ensure_multiple_accounts() {
+    [[ -e "$HOME/.leetcode" && ! -L "$HOME/.leetcode" ]] && die "$HOME/.leetcode must be a symbolic link for handling multiple."
+}
+
+case "$1" in
+    'done')
+        sqlite3 "$HOME/.leetcode/cache/Problems" "SELECT id, name FROM problems WHERE status='ac'" | tr '|' '\t'
+        exit 0
+    ;;
+    'find')
+        leetcode list | grep '\[\s*[0-9]\{1,4\}\s*\]' | $MENU 'Problem name/number: ' | grep -o '[0-9]\{1,4\}' | head -n 1
+        exit 0
+    ;;
+    'todo')
+        sqlite3 "$HOME/.leetcode/cache/Problems" "SELECT name FROM problems WHERE desc!='' AND status='Null'" | tr '|' '\t'
+        exit 0
+    ;;
+    'switch')
+        [[ -z "$2" ]] && die "No user specified to switch." || newuser="$2"
+        user_root="$rootdir/$newuser"
+        [[ -d "$user_root" ]] || die "No user '$newuser' found in $rootdir"
+
+        ensure_multiple_accounts
+        rm "$HOME/.leetcode"
+        ln -s "$user_root" "$HOME/.leetcode"
+        echo "Welcome $newuser !!"
+        exit 0
+    ;;
+    'whoami')
+        ensure_multiple_accounts
+        user_root="$(readlink "$HOME/.leetcode")"
+        echo "${user_root##*/}"
+    ;;
+    'accounts')
+        ensure_multiple_accounts
+        ls "$rootdir" | xargs -I {} basename {}
+    ;;
+    'help')
+        showhelp
+        exit 0
+    ;;
+    '')
+        showhelp
+        exit 1
+    ;;
+    *)
+        showhelp
+        exit 1
+esac
