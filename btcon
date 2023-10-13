@@ -4,12 +4,14 @@ spkr_sink='alsa_output.pci-0000_00_1f.3.analog-stereo'
 [[ $# -lt 0 ]] && exit 1
 rfkill unblock bluetooth && sleep 2
 
-if [[ "$1" == "q2" ]]; then
+if [[ "$1" == 'q2' ]]; then
     addr='18:95:52:78:38:D6'
-elif [[ "$1" == "r" ]]; then
+elif [[ "$1" == 'r' ]]; then
     addr='11:11:22:37:0A:48'
-elif [[ "$1" == "m31" ]]; then
+elif [[ "$1" == 'm31' ]]; then
     addr='04:BD:BF:9A:9B:ED'
+elif [[ "$1" == 't' ]]; then
+    addr='F4:4E:FD:13:C6:74'
 else
     echo "[ERROR]: Unknown device argument."
     exit 1
