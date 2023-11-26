@@ -1,18 +1,17 @@
 #!/usr/bin/env bash
-# Extensions for leetcode-cli -> https://github.com/clearloop/leetcode-cli
+# Extends the power of leetcode-cli -> https://github.com/clearloop/leetcode-cli
 
 rootdir="$XDG_DATA_HOME/leetcode"
 
 die() {
-    [[ -n "$1" ]] && msg="$1" || msg='Some error occured.'
-    echo "$msg"
+    [[ -n "$1" ]] && echo "$1" || echo 'Some error occured.'
     exit 1
 }
 
 showhelp() {
     cat <<- EOM
-	leetcode plus - extend the utility of leetcode-cli.
-	Usage: lcp subcommand [arguments]
+	leetcode plus plus - extend the utility of leetcode-cli.
+	Usage: $(basename $0) subcommand [arguments]
 
 	done -> List all problems accepted by leetcode.
 	find -> Find the id of a problem by searching its name.
@@ -34,7 +33,7 @@ ensure_multiple_accounts() {
 
 case "$1" in
     'done')
-        sqlite3 "$HOME/.leetcode/cache/Problems" "SELECT id, name FROM problems WHERE status='ac'" | tr '|' '\t'
+        sqlite3 "$HOME/.leetcode/Problems" "SELECT id, name FROM problems WHERE status='ac'" | tr '|' '\t'
         exit 0
     ;;
     'find')
@@ -42,7 +41,7 @@ case "$1" in
         exit 0
     ;;
     'todo')
-        sqlite3 "$HOME/.leetcode/cache/Problems" "SELECT name FROM problems WHERE desc!='' AND status='Null'" | tr '|' '\t'
+        sqlite3 "$HOME/.leetcode/Problems" "SELECT name FROM problems WHERE desc!='' AND status='Null'" | tr '|' '\t'
         exit 0
     ;;
     'switch')
