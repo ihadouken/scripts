@@ -1,2 +1,2 @@
 #!/bin/bash
-printf "%.f%%\n" $(xbacklight) 
+printf "%.f%%\n" $(xbacklight)
