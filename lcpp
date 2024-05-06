@@ -41,7 +41,7 @@ case "$1" in
         exit 0
     ;;
     'todo')
-        sqlite3 "$HOME/.leetcode/Problems" "SELECT name FROM problems WHERE desc!='' AND status='Null'" | tr '|' '\t'
+        leetcode list | grep '✘' | grep -o '[0-9]\{1,4\}]' | tr -d ']'
         exit 0
     ;;
     'switch')
