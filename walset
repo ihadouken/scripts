@@ -34,17 +34,31 @@ if [[ -z "$wal" ]]; then
     [[ -n "$1" ]] && wal="$1" || wal="$(fzf < "$data_dir/favorites.txt")"
 fi
 
-wal_cmd="wal -i '$wal' --cols16 --backend colorz"
+set() {
+    wal -n --recursive -i "$1" --cols16 --backend colorz
+    img="$(cat "$cache_dir"/wal)"
+
+    if [[ "$XDG_SESSION_TYPE" == 'x11' ]]; then
+        nitrogen --set-zoom-fill "$img" &> /dev/null &
+    elif [[ "$XDG_SESSION_TYPE" == 'wayland' ]]; then
+        hyprctl hyprpaper preload "$img" &> /dev/null
+        hyprctl hyprpaper wallpaper "eDP-1, $img" &> /dev/null
+        hyprctl hyprpaper unload "$img" &> /dev/null
+    else
+        echo "[ERROR]: Unsupported session."
+        exit 1
+    fi
+}
 
 if [[ -d "$wal" ]]; then
     # iterate as long as condition is false
     until [[ "$choice" == 'y' ]]; do
-        eval "$wal_cmd"
+        set "$wal"
         read -r -n 1 -p 'Like this colorscheme ? (y/n)' choice
         printf "\n\n"
     done
 elif [[ -f "$wal" ]]; then
-    eval "$wal_cmd"
+    set "$wal"
 else
     echo "[Error]: '$wal' is not a file or directory."
 fi
@@ -52,7 +66,7 @@ fi
 ### Program Integration ###
 # firefox
 # semicolon is required after the last command in a command group
-pgrep -x firefox > /dev/null && { pywalfox update || echo "Can't update firefox theme !"; }
+# pgrep -x firefox > /dev/null && { pywalfox update || echo "Can't update firefox theme !"; }
 
 # dunst
 pgrep -x dunst > /dev/null && killall dunst
