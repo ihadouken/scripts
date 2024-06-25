@@ -43,6 +43,7 @@ set() {
     elif [[ "$XDG_SESSION_TYPE" == 'wayland' ]]; then
         hyprctl hyprpaper preload "$img" &> /dev/null
         hyprctl hyprpaper wallpaper "eDP-1, $img" &> /dev/null
+        sleep 0.1
         hyprctl hyprpaper unload "$img" &> /dev/null
     else
         echo "[ERROR]: Unsupported session."
